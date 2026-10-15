@@ -1,0 +1,39 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: danfrenchtaxidermy-website:latest
+    container_name: dft-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      # Optional: deliver contact form submissions to a webhook
+      CONTACT_WEBHOOK_URL: ${CONTACT_WEBHOOK_URL:-}
+      CONTACT_TO_EMAIL: ${CONTACT_TO_EMAIL:-dan@danfrenchtaxidermy.com}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Dev container (hot reload). Run with:  docker compose --profile dev up
+  dev:
+    image: node:20-alpine
+    container_name: dft-dev
+    profiles: ["dev"]
+    working_dir: /app
+    command: sh -lc "npm ci --no-audit --no-fund && npm run dev"
+    environment:
+      NODE_ENV: development
+      NEXT_TELEMETRY_DISABLED: "1"
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
